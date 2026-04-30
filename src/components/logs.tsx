@@ -64,7 +64,7 @@ export default async function Logs() {
                     <th className="px-4 py-4" />
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y ">
                   {logs.map((log) => (
                     <tr
                       key={log.id}
