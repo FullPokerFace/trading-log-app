@@ -7,6 +7,7 @@ export interface ILog {
   option: "CALL" | "PUT";
   outcome: "WIN" | "LOSS";
   confirmedConditions: boolean;
+  imageUrls: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,7 @@ const LogSchema = new Schema<ILog>(
     option: { type: String, enum: ["CALL", "PUT"], required: true },
     outcome: { type: String, enum: ["WIN", "LOSS"], required: true },
     confirmedConditions: { type: Boolean, required: true, default: false },
+    imageUrls: { type: [String], default: [] },
   },
   { timestamps: true }
 );

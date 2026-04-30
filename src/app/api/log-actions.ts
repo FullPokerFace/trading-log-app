@@ -5,7 +5,7 @@ import { auth } from "@/app/api/auth";
 import { connectDB } from "@/app/api/db";
 import { Log, type ILog } from "@/app/api/models/log";
 
-export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "createdAt"> & { id: string };
+export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "imageUrls" | "createdAt"> & { id: string };
 
 export async function getLogs(): Promise<LogEntry[]> {
   const session = await auth();
@@ -23,6 +23,7 @@ export async function getLogs(): Promise<LogEntry[]> {
     option: doc.option,
     outcome: doc.outcome,
     confirmedConditions: doc.confirmedConditions,
+    imageUrls: doc.imageUrls ?? [],
     createdAt: doc.createdAt,
   }));
 }
@@ -44,6 +45,7 @@ export async function createLogEntry(
   const option = formData.get("option") as ILog["option"];
   const outcome = formData.get("outcome") as ILog["outcome"];
   const confirmedConditions = formData.get("confirmedConditions") === "on";
+  const imageUrls = formData.getAll("imageUrls").map(String).filter(Boolean);
 
   if (!direction15m || !direction1hr || !option || !outcome) {
     return { error: "All fields are required." };
@@ -58,6 +60,7 @@ export async function createLogEntry(
       option,
       outcome,
       confirmedConditions,
+      imageUrls,
     });
   } catch (err) {
     console.error("Failed to save log entry:", err);
@@ -73,6 +76,22 @@ export async function deleteLog(id: string): Promise<void> {
   if (!session?.user?.email) return;
 
   await connectDB();
-  await Log.deleteOne({ _id: id, userEmail: session.user.email });
+  const log = await Log.findOneAndDelete({ _id: id, userEmail: session.user.email }).lean();
+
+  if (log?.imageUrls?.length) {
+    await Promise.allSettled(
+      log.imageUrls.map((url) => {
+        const imageId = url.split("/").at(-2);
+        return fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${imageId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+          }
+        );
+      })
+    );
+  }
+
   revalidatePath("/dashboard");
 }

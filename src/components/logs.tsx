@@ -2,6 +2,7 @@ import { getLogs } from "@/app/api/log-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import Text from "@/components/text";
 import DeleteLogButton from "@/components/delete-log-button";
+import ImageLightbox from "@/components/image-lightbox";
 import {
   TrendingUp,
   TrendingDown,
@@ -14,7 +15,7 @@ import {
 function Badge({ positive, children }: { positive: boolean; children: React.ReactNode }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${positive
-      ? "bg-blue-500/10 text-blue-400 ring-blue-500/20"
+      ? "bg-sky-500/10 text-sky-400 ring-sky-500/20"
       : "bg-red-500/10 text-red-400 ring-red-500/20"
       }`}>
       {children}
@@ -45,6 +46,7 @@ export default async function Logs() {
                     <th className="px-4 py-3 font-medium">Option</th>
                     <th className="px-4 py-3 font-medium">Outcome</th>
                     <th className="px-4 py-3 font-medium">Conditions</th>
+                    <th className="px-4 py-3 font-medium">Screenshots</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -53,7 +55,7 @@ export default async function Logs() {
                     <tr
                       key={log.id}
                       className={`group/row transition-colors hover:brightness-95 ${log.outcome === "WIN"
-                        ? "bg-blue-500/5"
+                        ? "bg-sky-500/5"
                         : "bg-red-500/5"
                         }`}
                     >
@@ -98,8 +100,11 @@ export default async function Logs() {
                       </td>
                       <td className="px-4 py-3 flex pl-12">
                         {log.confirmedConditions
-                          ? <ShieldCheck className="size-4 text-blue-400" />
+                          ? <ShieldCheck className="size-4 text-sky-400" />
                           : <ShieldOff className="size-4 text-muted-foreground" />}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ImageLightbox urls={log.imageUrls} />
                       </td>
                       <td className="px-4 py-3 text-right">
                         <DeleteLogButton id={log.id} />
