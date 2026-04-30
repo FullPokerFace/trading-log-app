@@ -25,6 +25,9 @@ import {
   Save,
   Loader2,
   ImagePlus,
+  ArrowUpFromLine,
+  ArrowDownToLine,
+  Hash,
 } from "lucide-react";
 
 const initialState: LogEntryState = {};
@@ -233,9 +236,61 @@ export default function LogEntryForm() {
               </fieldset>
             ))}
 
+            {/* Entry / Exit prices + contracts */}
+            <div className="flex gap-3">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Text variant="subtitle" className="flex items-center gap-1.5">
+                  <ArrowUpFromLine className="size-4 text-sky-400" />
+                  Entry Price
+                </Text>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <input
+                    type="number"
+                    name="entryPrice"
+                    step="any"
+                    min="0"
+                    placeholder="0.00"
+                    className="w-full rounded-lg border border-input bg-background pl-7 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Text variant="subtitle" className="flex items-center gap-1.5">
+                  <ArrowDownToLine className="size-4 text-red-400" />
+                  Exit Price
+                </Text>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <input
+                    type="number"
+                    name="exitPrice"
+                    step="any"
+                    min="0"
+                    placeholder="0.00"
+                    className="w-full rounded-lg border border-input bg-background pl-7 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Text variant="subtitle" className="flex items-center gap-1.5">
+                  <Hash className="size-4 text-muted-foreground" />
+                  Contracts
+                </Text>
+                <input
+                  type="number"
+                  name="contracts"
+                  step="1"
+                  min="1"
+                  placeholder="1"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
             <Checkbox
               name="confirmedConditions"
-              label="Confirmed all entry conditions"
+              label="I followed my entry rules for this trade"
               icon={<ShieldCheck className="size-4 text-muted-foreground" />}
             />
 

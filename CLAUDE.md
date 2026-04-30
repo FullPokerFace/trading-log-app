@@ -9,6 +9,7 @@
 - **Components**: shadcn/ui
 - **Auth**: NextAuth v5 beta — Google OAuth only
 - **Database**: MongoDB via Mongoose
+- **Image storage**: Cloudflare Images (direct creator uploads)
 - **Font**: Inter (via `next/font/google`)
 
 ## Project Structure
@@ -22,6 +23,8 @@ src/
 │   │   ├── auth/[...nextauth]/route.ts  # NextAuth catch-all handler
 │   │   ├── db.ts                        # Mongoose connection (connectDB)
 │   │   ├── log-actions.ts               # Server actions: createLogEntry, getLogs, deleteLog
+│   │   ├── upload/
+│   │   │   └── route.ts                 # POST /api/upload — returns Cloudflare direct upload URLs
 │   │   └── models/
 │   │       └── log.ts                   # Mongoose Log model + ILog interface
 │   ├── dashboard/
@@ -36,6 +39,7 @@ src/
 │   ├── log-entry-form.tsx               # Dialog form — creates a new log entry
 │   ├── logs.tsx                         # Server component — fetches + renders log table
 │   ├── delete-log-button.tsx            # Client component — deletes a log row
+│   ├── image-lightbox.tsx               # Client component — thumbnail grid + dialog image viewer
 │   ├── page-loader.tsx                  # Reusable centered spinner
 │   └── ui/                             # shadcn/ui primitives (button, card, separator…)
 └── lib/
@@ -75,6 +79,7 @@ await connectDB();
 | `option`            | `"CALL" \| "PUT"`             | Required, enum-validated     |
 | `outcome`           | `"WIN" \| "LOSS"`             | Required, enum-validated     |
 | `confirmedConditions` | `Boolean`                   | Default false                |
+| `imageUrls`         | `String[]`                    | Cloudflare delivery URLs, default `[]` |
 | `createdAt`         | `Date`                        | Auto via `timestamps: true`  |
 
 The model uses `delete models["Log"]; model(...)` instead of `models.Log ?? model(...)` to prevent stale schema cache during hot reloads after a field rename.
@@ -83,17 +88,17 @@ The model uses `delete models["Log"]; model(...)` instead of `models.Log ?? mode
 
 `src/app/api/log-actions.ts`
 
-- `createLogEntry(prev, formData)` — validates fields, writes to DB, calls `revalidatePath("/dashboard")`
-- `getLogs()` — returns logs for current user sorted newest-first, uses `.lean()` for plain serializable objects
-- `deleteLog(id)` — deletes by `_id` scoped to `userEmail`, calls `revalidatePath("/dashboard")`
+- `createLogEntry(prev, formData)` — validates fields, accepts `imageUrls` hidden inputs, writes to DB, calls `revalidatePath("/dashboard")`
+- `getLogs()` — returns logs for current user sorted newest-first, uses `.lean()` for plain serializable objects, includes `imageUrls`
+- `deleteLog(id)` — uses `findOneAndDelete` to get the doc first, then deletes each image from Cloudflare via `DELETE /images/v1/:id`, then revalidates
 
 ## Components
 
 ### LogEntryForm
-`src/components/log-entry-form.tsx` — client component. Opens a dialog, submits via `useActionState(createLogEntry)`. Closes dialog automatically on `state.success`. Button disabled while pending.
+`src/components/log-entry-form.tsx` — client component. Opens a dialog, submits via `useActionState(createLogEntry)`. Closes dialog automatically on `state.success`. Button disabled while pending. Image upload flow: on submit, requests signed direct-upload URLs from `POST /api/upload`, uploads files directly to Cloudflare from the browser, then injects resulting `imageUrls` as hidden FormData fields before calling `formAction` inside `startTransition`. Images optional.
 
 ### Logs
-`src/components/logs.tsx` — async server component. Fetches logs directly, no client-side call. Wrapped in `<Suspense>` on the dashboard page. Table rows are blue-tinted for WIN, red-tinted for LOSS. Positive values use blue (`text-blue-400`), negative use red (`text-red-400`).
+`src/components/logs.tsx` — async server component. Fetches logs directly, no client-side call. Wrapped in `<Suspense>` on the dashboard page. Table rows are sky-tinted for WIN, red-tinted for LOSS. Positive values use `text-sky-400`, negative use `text-red-400`. Includes `ImageLightbox` per row for screenshot thumbnails.
 
 ### DeleteLogButton
 `src/components/delete-log-button.tsx` — client component. Uses `useTransition` to call `deleteLog`. Trash icon hidden by default, revealed on row hover via `group/row` + `group-hover/row:opacity-100`.
@@ -138,6 +143,8 @@ AUTH_SECRET=
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
 DB_URI=mongodb+srv://<user>:<pass>@<cluster>/<db-name>?appName=<app>
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
 ```
 
 ## Known Gotchas
@@ -148,3 +155,7 @@ DB_URI=mongodb+srv://<user>:<pass>@<cluster>/<db-name>?appName=<app>
 - **Mongoose model cache**: After renaming schema fields, `models.Log ?? model(...)` returns the stale registered model. Use `delete models["Log"]; model(...)` to bust it, then restore the guard once the rename is stable.
 - **NextAuth session has no `id`**: Default JWT strategy with Google provider only includes `name`, `email`, `image` in the session. Use `session.user.email` as the user identifier.
 - **MongoDB default database**: URI without a database name routes to `test`. Always include `/<db-name>` before the `?` query string.
+- **Cloudflare direct upload**: `POST /images/v2/direct_upload` must use `multipart/form-data`, not JSON. Returns `{ result: { id, uploadURL } }`. The `uploadURL` format is `https://upload.imagedelivery.net/<accountHash>/<imageId>` — parse index `[3]` for the account hash to build delivery URLs.
+- **Cloudflare image delivery URL**: `https://imagedelivery.net/<accountHash>/<imageId>/resize1080` — variant `resize1080` is the configured delivery variant.
+- **formAction outside transition**: Calling `formAction` from `useActionState` outside `startTransition` throws a warning. Always wrap it: `startTransition(() => formAction(fd))`.
+- **ImageLightbox in table**: Putting a stateful client component inside a `<tr>` can cause DOM glitches. Keep `ImageLightbox` as a self-contained `DialogRoot` — one dialog per row is fine.

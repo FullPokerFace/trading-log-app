@@ -5,7 +5,7 @@ import { auth } from "@/app/api/auth";
 import { connectDB } from "@/app/api/db";
 import { Log, type ILog } from "@/app/api/models/log";
 
-export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "imageUrls" | "createdAt"> & { id: string };
+export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "entryPrice" | "exitPrice" | "contracts" | "imageUrls" | "createdAt"> & { id: string };
 
 export async function getLogs(): Promise<LogEntry[]> {
   const session = await auth();
@@ -23,6 +23,9 @@ export async function getLogs(): Promise<LogEntry[]> {
     option: doc.option,
     outcome: doc.outcome,
     confirmedConditions: doc.confirmedConditions,
+    entryPrice: doc.entryPrice,
+    exitPrice: doc.exitPrice,
+    contracts: doc.contracts,
     imageUrls: doc.imageUrls ?? [],
     createdAt: doc.createdAt,
   }));
@@ -45,6 +48,9 @@ export async function createLogEntry(
   const option = formData.get("option") as ILog["option"];
   const outcome = formData.get("outcome") as ILog["outcome"];
   const confirmedConditions = formData.get("confirmedConditions") === "on";
+  const entryPrice = formData.get("entryPrice") ? Number(formData.get("entryPrice")) : undefined;
+  const exitPrice = formData.get("exitPrice") ? Number(formData.get("exitPrice")) : undefined;
+  const contracts = formData.get("contracts") ? Number(formData.get("contracts")) : undefined;
   const imageUrls = formData.getAll("imageUrls").map(String).filter(Boolean);
 
   if (!direction15m || !direction1hr || !option || !outcome) {
@@ -60,6 +66,9 @@ export async function createLogEntry(
       option,
       outcome,
       confirmedConditions,
+      entryPrice,
+      exitPrice,
+      contracts,
       imageUrls,
     });
   } catch (err) {
