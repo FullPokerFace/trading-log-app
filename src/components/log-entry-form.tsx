@@ -47,7 +47,7 @@ const fields: FieldConfig[] = [
     name: "direction15m",
     legendIcon: <TrendingUp className="size-4 text-muted-foreground" />,
     options: [
-      { value: "Bullish", icon: <TrendingUp className="size-4 text-green-500" />, color: "green" },
+      { value: "Bullish", icon: <TrendingUp className="size-4 text-blue-400" />, color: "green" },
       { value: "Bearish", icon: <TrendingDown className="size-4 text-red-500" />, color: "red" },
     ],
   },
@@ -56,7 +56,7 @@ const fields: FieldConfig[] = [
     name: "direction1hr",
     legendIcon: <TrendingUp className="size-4 text-muted-foreground" />,
     options: [
-      { value: "Bullish", icon: <TrendingUp className="size-4 text-green-500" />, color: "green" },
+      { value: "Bullish", icon: <TrendingUp className="size-4 text-blue-400" />, color: "green" },
       { value: "Bearish", icon: <TrendingDown className="size-4 text-red-500" />, color: "red" },
     ],
   },
@@ -65,7 +65,7 @@ const fields: FieldConfig[] = [
     name: "option",
     legendIcon: <TrendingUp className="size-4 text-muted-foreground" />,
     options: [
-      { value: "CALL", icon: <TrendingUp className="size-4 text-green-500" />, color: "green" },
+      { value: "CALL", icon: <TrendingUp className="size-4 text-blue-400" />, color: "green" },
       { value: "PUT", icon: <TrendingDown className="size-4 text-red-500" />, color: "red" },
     ],
   },
@@ -74,14 +74,14 @@ const fields: FieldConfig[] = [
     name: "outcome",
     legendIcon: <Trophy className="size-4 text-muted-foreground" />,
     options: [
-      { value: "WIN", icon: <Trophy className="size-4 text-green-500" />, color: "green" },
+      { value: "WIN", icon: <Trophy className="size-4 text-blue-400" />, color: "green" },
       { value: "LOSS", icon: <CircleX className="size-4 text-red-500" />, color: "red" },
     ],
   },
 ];
 
 const checkedColors: Record<string, string> = {
-  green: "has-[:checked]:border-green-500 has-[:checked]:bg-green-500/10 has-[:checked]:text-green-600",
+  green: "has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10 has-[:checked]:text-blue-400",
   red: "has-[:checked]:border-red-500   has-[:checked]:bg-red-500/10   has-[:checked]:text-red-600",
 };
 

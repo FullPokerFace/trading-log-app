@@ -1,8 +1,31 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/app/api/auth";
 import { connectDB } from "@/app/api/db";
 import { Log, type ILog } from "@/app/api/models/log";
+
+export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "createdAt"> & { id: string };
+
+export async function getLogs(): Promise<LogEntry[]> {
+  const session = await auth();
+  if (!session?.user?.email) return [];
+
+  await connectDB();
+  const docs = await Log.find({ userEmail: session.user.email })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return docs.map((doc) => ({
+    id: doc._id.toString(),
+    direction15m: doc.direction15m,
+    direction1hr: doc.direction1hr,
+    option: doc.option,
+    outcome: doc.outcome,
+    confirmedConditions: doc.confirmedConditions,
+    createdAt: doc.createdAt,
+  }));
+}
 
 export type LogEntryState = {
   success?: boolean;
@@ -41,5 +64,15 @@ export async function createLogEntry(
     return { error: "Failed to save entry. Please try again." };
   }
 
+  revalidatePath("/dashboard");
   return { success: true };
+}
+
+export async function deleteLog(id: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.email) return;
+
+  await connectDB();
+  await Log.deleteOne({ _id: id, userEmail: session.user.email });
+  revalidatePath("/dashboard");
 }

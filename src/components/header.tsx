@@ -2,14 +2,18 @@ import { auth } from "@/app/api/auth";
 import { handleSignIn, handleSignOut } from "@/app/api/auth-actions";
 import { Button } from "@/components/ui/button";
 import Text from "@/components/text";
+import { Gem } from "lucide-react";
 
 export default async function Header() {
   const session = await auth();
 
   return (
     <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Text variant="title" className="text-base">Diamond Log</Text>
+      <div className="container mx-auto flex h-14 items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <Gem className="size-4 text-primary" />
+          <Text variant="title" className="text-base">Diamond Log</Text>
+        </div>
 
         {session ? (
           <div className="flex items-center gap-3">
