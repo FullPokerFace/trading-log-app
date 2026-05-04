@@ -5,7 +5,6 @@ const URI = process.env.DB_URI!;
 if (!URI) throw new Error("DB_URI is not defined in environment variables");
 
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoose: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
 }
 

@@ -8,11 +8,8 @@ import {
   TrendingDown,
   Trophy,
   CircleX,
-  ShieldCheck,
-  ShieldOff,
   ArrowUpFromLine,
   ArrowDownToLine,
-  Hash,
   DollarSign,
   Check,
 } from "lucide-react";

@@ -125,8 +125,16 @@ export default function LogEntryForm() {
   useEffect(() => {
     if (state.success) {
       closeRef.current?.click();
-      setPreviews([]);
-      setUploadedUrls([]);
+      const timeout = window.setTimeout(() => {
+        setPreviews((prev) => {
+          prev.forEach((preview) => URL.revokeObjectURL(preview.url));
+          return [];
+        });
+        setUploadedUrls([]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }, 0);
+
+      return () => window.clearTimeout(timeout);
     }
   }, [state.success]);
 
@@ -168,7 +176,7 @@ export default function LogEntryForm() {
         };
         if (!data.uploads) throw new Error(data.error ?? "Upload failed");
 
-        const uploadResults = await Promise.all(
+        await Promise.all(
           data.uploads.map(async ({ uploadURL }, i) => {
             const body = new FormData();
             body.append("file", previews[i].file);
