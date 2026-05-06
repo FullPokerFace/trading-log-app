@@ -1,8 +1,11 @@
+import { getIndicators } from "@/app/api/indicator-actions";
 import { getLogs } from "@/app/api/log-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import Text from "@/components/text";
 import DeleteLogButton from "@/components/delete-log-button";
 import ImageLightbox from "@/components/image-lightbox";
+import IndicatorIcon from "@/components/indicator-icon";
+import { defaultIndicatorIcon } from "@/lib/indicator-icons";
 import {
   TrendingUp,
   TrendingDown,
@@ -31,7 +34,26 @@ function calcPnl(log: { entryPrice?: number; exitPrice?: number; contracts?: num
 }
 
 export default async function Logs() {
-  const logs = await getLogs();
+  const [logs, currentIndicators] = await Promise.all([
+    getLogs(),
+    getIndicators(),
+  ]);
+  const indicatorColumns = [...currentIndicators];
+  const seenIndicatorIds = new Set(indicatorColumns.map((indicator) => indicator.id));
+
+  logs.forEach((log) => {
+    log.indicators.forEach((indicator) => {
+      if (seenIndicatorIds.has(indicator.indicatorId)) return;
+      seenIndicatorIds.add(indicator.indicatorId);
+      indicatorColumns.push({
+        id: indicator.indicatorId,
+        label: indicator.label,
+        icon: indicator.icon ?? defaultIndicatorIcon,
+        type: indicator.type,
+        createdAt: log.createdAt,
+      });
+    });
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,6 +79,14 @@ export default async function Logs() {
                     <th className="px-4 py-4 font-medium">Contracts</th>
                     <th className="px-4 py-4 font-medium">P&L</th>
                     <th className="px-4 py-4 font-medium">Followed entry rules?</th>
+                    {indicatorColumns.map((indicator) => (
+                      <th key={indicator.id} className="min-w-40 px-4 py-4 font-medium">
+                        <span className="flex items-center gap-1.5">
+                          <IndicatorIcon name={indicator.icon} className="size-3.5" />
+                          {indicator.label}
+                        </span>
+                      </th>
+                    ))}
                     <th className="px-4 py-4 font-medium">Screenshots</th>
                     <th className="px-4 py-4" />
                   </tr>
@@ -138,6 +168,23 @@ export default async function Logs() {
                           ? <span className="flex items-center gap-1 text-sky-400"><Check className="size-3" />Yes</span>
                           : <span className="flex items-center gap-1 text-red-400"><CircleX className="size-3" />No</span>}
                       </td>
+                      {indicatorColumns.map((indicator) => {
+                        const value = log.indicators.find(
+                          (logIndicator) => logIndicator.indicatorId === indicator.id
+                        )?.value;
+
+                        return (
+                          <td key={indicator.id} className="min-w-40 px-4 py-4">
+                            {value == null ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : value ? (
+                              <span className="flex items-center gap-1 text-sky-400"><Check className="size-3" />Yes</span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-red-400"><CircleX className="size-3" />No</span>
+                            )}
+                          </td>
+                        );
+                      })}
                       <td className="px-4 py-4">
                         <ImageLightbox urls={log.imageUrls} />
                       </td>
