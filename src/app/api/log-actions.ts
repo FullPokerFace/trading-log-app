@@ -8,7 +8,7 @@ import { Log, type ILog } from "@/app/api/models/log";
 import { Indicator } from "@/app/api/models/indicator";
 import { defaultIndicatorIcon } from "@/lib/indicator-icons";
 
-export type LogEntry = Pick<ILog, "direction15m" | "direction1hr" | "option" | "outcome" | "confirmedConditions" | "entryPrice" | "exitPrice" | "contracts" | "indicators" | "imageUrls" | "createdAt"> & { id: string };
+export type LogEntry = Pick<ILog, "entryPrice" | "exitPrice" | "contracts" | "indicators" | "imageUrls" | "createdAt"> & { id: string };
 
 export async function getLogs(): Promise<LogEntry[]> {
   const session = await auth();
@@ -21,11 +21,6 @@ export async function getLogs(): Promise<LogEntry[]> {
 
   return docs.map((doc) => ({
     id: doc._id.toString(),
-    direction15m: doc.direction15m,
-    direction1hr: doc.direction1hr,
-    option: doc.option,
-    outcome: doc.outcome,
-    confirmedConditions: doc.confirmedConditions,
     entryPrice: doc.entryPrice,
     exitPrice: doc.exitPrice,
     contracts: doc.contracts,
@@ -47,11 +42,6 @@ export async function createLogEntry(
   const session = await auth();
   if (!session?.user?.email) return { error: "Unauthorized" };
 
-  const direction15m = formData.get("direction15m") as ILog["direction15m"];
-  const direction1hr = formData.get("direction1hr") as ILog["direction1hr"];
-  const option = formData.get("option") as ILog["option"];
-  const outcome = formData.get("outcome") as ILog["outcome"];
-  const confirmedConditions = formData.get("confirmedConditions") === "on";
   const entryPrice = formData.get("entryPrice") ? Number(formData.get("entryPrice")) : undefined;
   const exitPrice = formData.get("exitPrice") ? Number(formData.get("exitPrice")) : undefined;
   const contracts = formData.get("contracts") ? Number(formData.get("contracts")) : undefined;
@@ -67,10 +57,6 @@ export async function createLogEntry(
   const checkedIndicatorIds = new Set(
     formData.getAll("checkedIndicators").map(String)
   );
-
-  if (!direction15m || !direction1hr || !option || !outcome) {
-    return { error: "All fields are required." };
-  }
 
   try {
     await connectDB();
@@ -92,11 +78,6 @@ export async function createLogEntry(
 
     await Log.create({
       userEmail: session.user.email,
-      direction15m,
-      direction1hr,
-      option,
-      outcome,
-      confirmedConditions,
       entryPrice,
       exitPrice,
       contracts,

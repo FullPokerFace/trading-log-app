@@ -7,26 +7,11 @@ import ImageLightbox from "@/components/image-lightbox";
 import IndicatorIcon from "@/components/indicator-icon";
 import { defaultIndicatorIcon } from "@/lib/indicator-icons";
 import {
-  TrendingUp,
-  TrendingDown,
-  Trophy,
-  CircleX,
   ArrowUpFromLine,
   ArrowDownToLine,
   DollarSign,
   Check,
 } from "lucide-react";
-
-function Badge({ positive, children }: { positive: boolean; children: React.ReactNode }) {
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${positive
-      ? "bg-sky-500/10 text-sky-400 ring-sky-500/20"
-      : "bg-red-500/10 text-red-400 ring-red-500/20"
-      }`}>
-      {children}
-    </span>
-  );
-}
 
 function calcPnl(log: { entryPrice?: number; exitPrice?: number; contracts?: number }) {
   if (log.entryPrice == null || log.exitPrice == null) return null;
@@ -70,15 +55,10 @@ export default async function Logs() {
                 <thead>
                   <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="px-4 py-4 font-medium">Date</th>
-                    <th className="px-4 py-4 font-medium">15m</th>
-                    <th className="px-4 py-4 font-medium">1hr</th>
-                    <th className="px-4 py-4 font-medium">Option</th>
-                    <th className="px-4 py-4 font-medium">Outcome</th>
                     <th className="px-4 py-4 font-medium">Entry</th>
                     <th className="px-4 py-4 font-medium">Exit</th>
                     <th className="px-4 py-4 font-medium">Contracts</th>
                     <th className="px-4 py-4 font-medium">P&L</th>
-                    <th className="px-4 py-4 font-medium">Followed entry rules?</th>
                     {indicatorColumns.map((indicator) => (
                       <th key={indicator.id} className="min-w-40 px-4 py-4 font-medium">
                         <span className="flex items-center gap-1.5">
@@ -103,38 +83,6 @@ export default async function Logs() {
                           day: "numeric",
                           year: "numeric",
                         })}
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge positive={log.direction15m === "Bullish"}>
-                          {log.direction15m === "Bullish"
-                            ? <TrendingUp className="size-3" />
-                            : <TrendingDown className="size-3" />}
-                          {log.direction15m}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge positive={log.direction1hr === "Bullish"}>
-                          {log.direction1hr === "Bullish"
-                            ? <TrendingUp className="size-3" />
-                            : <TrendingDown className="size-3" />}
-                          {log.direction1hr}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge positive={log.option === "CALL"}>
-                          {log.option === "CALL"
-                            ? <TrendingUp className="size-3" />
-                            : <TrendingDown className="size-3" />}
-                          {log.option}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge positive={log.outcome === "WIN"}>
-                          {log.outcome === "WIN"
-                            ? <Trophy className="size-3" />
-                            : <CircleX className="size-3" />}
-                          {log.outcome}
-                        </Badge>
                       </td>
                       <td className="px-4 py-4 tabular-nums">
                         {log.entryPrice != null
@@ -163,11 +111,6 @@ export default async function Logs() {
                           );
                         })()}
                       </td>
-                      <td className="px-4 py-4 ">
-                        {log.confirmedConditions
-                          ? <span className="flex items-center gap-1 text-sky-400"><Check className="size-3" />Yes</span>
-                          : <span className="flex items-center gap-1 text-red-400"><CircleX className="size-3" />No</span>}
-                      </td>
                       {indicatorColumns.map((indicator) => {
                         const value = log.indicators.find(
                           (logIndicator) => logIndicator.indicatorId === indicator.id
@@ -179,9 +122,7 @@ export default async function Logs() {
                               <span className="text-muted-foreground">-</span>
                             ) : value ? (
                               <span className="flex items-center gap-1 text-sky-400"><Check className="size-3" />Yes</span>
-                            ) : (
-                              <span className="flex items-center gap-1 text-red-400"><CircleX className="size-3" />No</span>
-                            )}
+                            ) : null}
                           </td>
                         );
                       })}
