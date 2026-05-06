@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import Text from "@/components/text";
 import DeleteLogButton from "@/components/delete-log-button";
 import ImageLightbox from "@/components/image-lightbox";
-import IndicatorIcon from "@/components/indicator-icon";
 import { defaultIndicatorIcon } from "@/lib/indicator-icons";
 import {
   ArrowUpFromLine,

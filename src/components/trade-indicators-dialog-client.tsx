@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   createIndicator,
   deleteIndicator,
+  updateIndicator,
   type IndicatorState,
   type TradeIndicator,
 } from "@/app/api/indicator-actions";
@@ -13,9 +14,9 @@ import IndicatorIcon from "@/components/indicator-icon";
 import Text from "@/components/text";
 import {
   defaultIndicatorIcon,
-  indicatorIconOptions,
   type IndicatorIconName,
 } from "@/lib/indicator-icons";
+import IndicatorIconPicker from "@/components/indicator-icon-picker";
 import {
   DialogRoot,
   DialogTrigger,
@@ -27,6 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   CircleX,
+  Check,
+  Pencil,
   Loader2,
   Plus,
   Save,
@@ -60,6 +63,105 @@ function DeleteIndicatorButton({ id }: { id: string }) {
         <Trash2 className="size-3.5" />
       )}
     </button>
+  );
+}
+
+function IndicatorRow({ indicator }: { indicator: TradeIndicator }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [label, setLabel] = useState(indicator.label);
+  const [selectedIcon, setSelectedIcon] = useState<IndicatorIconName>(
+    indicator.icon
+  );
+  const [error, setError] = useState<string>();
+  const [pending, startTransition] = useTransition();
+
+  if (editing) {
+    return (
+      <li className="flex flex-col gap-3 rounded-lg border border-input bg-background/40 px-3 py-3">
+        <div className="flex items-center gap-3">
+          <IndicatorIcon name={selectedIcon} />
+          <input
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+            required
+            maxLength={100}
+            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-3 focus:ring-ring/50"
+          />
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              const fd = new FormData();
+              fd.set("label", label);
+              fd.set("icon", selectedIcon);
+              startTransition(async () => {
+                const result = await updateIndicator(indicator.id, fd);
+                if (result.error) {
+                  setError(result.error);
+                  return;
+                }
+                setError(undefined);
+                setEditing(false);
+                router.refresh();
+              });
+            }}
+            className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+            aria-label="Save indicator"
+          >
+            {pending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Check className="size-3.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setLabel(indicator.label);
+              setSelectedIcon(indicator.icon);
+              setError(undefined);
+              setEditing(false);
+            }}
+            className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+            aria-label="Cancel edit"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+
+        <IndicatorIconPicker value={selectedIcon} onChange={setSelectedIcon} />
+
+        {error && (
+          <p className="flex items-center gap-1.5 text-sm text-destructive">
+            <CircleX className="size-4" />
+            {error}
+          </p>
+        )}
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center gap-3 rounded-lg border border-input bg-background/40 px-3 py-2.5">
+      <IndicatorIcon name={indicator.icon} />
+      <p className="min-w-0 flex-1 break-words text-sm leading-6">
+        {indicator.label}
+      </p>
+      <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+        Checkbox
+      </span>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:text-primary"
+        aria-label="Edit indicator"
+      >
+        <Pencil className="size-3.5" />
+      </button>
+      <DeleteIndicatorButton id={indicator.id} />
+    </li>
   );
 }
 
@@ -124,19 +226,7 @@ export default function TradeIndicatorsDialogClient({
               ) : (
                 <ul className="flex flex-col gap-2">
                   {indicators.map((indicator) => (
-                    <li
-                      key={indicator.id}
-                      className="flex items-center gap-3 rounded-lg border border-input bg-background/40 px-3 py-2.5"
-                    >
-                      <IndicatorIcon name={indicator.icon} />
-                      <p className="min-w-0 flex-1 break-words text-sm leading-6">
-                        {indicator.label}
-                      </p>
-                      <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        Checkbox
-                      </span>
-                      <DeleteIndicatorButton id={indicator.id} />
-                    </li>
+                    <IndicatorRow key={indicator.id} indicator={indicator} />
                   ))}
                 </ul>
               )}
@@ -158,24 +248,7 @@ export default function TradeIndicatorsDialogClient({
               </div>
 
               <input type="hidden" name="icon" value={selectedIcon} />
-              <div className="grid grid-cols-8 gap-1.5">
-                {indicatorIconOptions.map((icon) => (
-                  <button
-                    key={icon.name}
-                    type="button"
-                    title={icon.label}
-                    aria-label={icon.label}
-                    aria-pressed={selectedIcon === icon.name}
-                    onClick={() => setSelectedIcon(icon.name)}
-                    className={`flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors hover:border-primary hover:text-primary ${selectedIcon === icon.name
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-input text-muted-foreground"
-                      }`}
-                  >
-                    <IndicatorIcon name={icon.name} className="size-4" />
-                  </button>
-                ))}
-              </div>
+              <IndicatorIconPicker value={selectedIcon} onChange={setSelectedIcon} />
 
               {state.error && (
                 <p className="flex items-center gap-1.5 text-sm text-destructive">

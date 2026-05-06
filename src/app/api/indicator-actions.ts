@@ -76,6 +76,41 @@ export async function createIndicator(
   return { success: true };
 }
 
+export async function updateIndicator(
+  id: string,
+  formData: FormData
+): Promise<IndicatorState> {
+  const session = await auth();
+  if (!session?.user?.email) return { error: "Unauthorized" };
+
+  const label = String(formData.get("label") ?? "").trim();
+  const iconValue = String(formData.get("icon") ?? defaultIndicatorIcon);
+  const icon = isIndicatorIconName(iconValue) ? iconValue : defaultIndicatorIcon;
+
+  if (!label) {
+    return { error: "Indicator label is required." };
+  }
+
+  if (label.length > 100) {
+    return { error: "Indicator labels must be 100 characters or less." };
+  }
+
+  try {
+    await connectDB();
+    await Indicator.findOneAndUpdate(
+      { _id: id, userEmail: session.user.email },
+      { label, icon },
+      { runValidators: true }
+    );
+  } catch (err) {
+    console.error("Failed to update indicator:", err);
+    return { error: "Failed to update indicator. Please try again." };
+  }
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 export async function deleteIndicator(id: string): Promise<void> {
   const session = await auth();
   if (!session?.user?.email) return;

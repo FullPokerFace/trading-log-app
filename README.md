@@ -28,6 +28,8 @@ Trading journal built with Next.js 16, App Router, TypeScript, Tailwind CSS v4, 
 - `src/components/trade-indicators-dialog.tsx` fetches indicators for the indicators dialog.
 - `src/components/trade-indicators-dialog-client.tsx` handles interactive add/delete indicator behavior and icon selection.
 - `src/components/indicator-icon.tsx` renders the selected Lucide icon for an indicator.
+- `src/components/indicator-icon-picker.tsx` wraps the reusable picker for indicator icons.
+- `src/components/ui/picker-dropdown.tsx` is a reusable portaled dropdown picker for icons now and colors later.
 - `src/app/api/log-actions.ts` contains trade log server actions.
 - `src/app/api/rule-actions.ts` contains trading rule server actions.
 - `src/app/api/indicator-actions.ts` contains trade indicator server actions.

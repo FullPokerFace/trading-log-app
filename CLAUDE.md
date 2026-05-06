@@ -50,9 +50,11 @@ src/
 |   +-- trade-indicators-dialog.tsx      # Server wrapper, fetches indicators for dialog
 |   +-- trade-indicators-dialog-client.tsx # Client dialog, add/delete trade indicators and choose icons
 |   +-- indicator-icon.tsx               # Shared Lucide indicator icon renderer
+|   +-- indicator-icon-picker.tsx        # Indicator-specific icon dropdown picker
 |   +-- image-lightbox.tsx               # Client thumbnail grid and dialog image viewer
 |   +-- page-loader.tsx                  # Reusable centered spinner
 |   +-- ui/                              # shadcn/ui primitives
+|       +-- picker-dropdown.tsx          # Reusable portaled dropdown picker
 +-- lib/
     +-- indicator-icons.ts               # Allowed 40-icon Lucide set for indicators
     +-- utils.ts                         # cn() helper, clsx + tailwind-merge
@@ -186,6 +188,14 @@ Trade indicators are associated with `session.user.email`, matching trade logs a
 
 `src/components/indicator-icon.tsx` - shared Lucide icon renderer for indicator dialog rows, new log checkbox labels, and log table headers.
 
+### IndicatorIconPicker
+
+`src/components/indicator-icon-picker.tsx` - indicator-specific wrapper around `PickerDropdown`. Uses the 40-icon allowlist and renders a compact `Icon` trigger button with a custom icon menu.
+
+### PickerDropdown
+
+`src/components/ui/picker-dropdown.tsx` - reusable client dropdown picker for string-valued options. The trigger stays inline, while the menu is rendered with a React portal to `document.body` and positioned from the trigger bounding box. This avoids clipping inside dialogs and is intended to be reused for colors and other compact pickers.
+
 ### DeleteLogButton
 
 `src/components/delete-log-button.tsx` - client component. Uses `useTransition` to call `deleteLog`. Trash icon is hidden by default and revealed on row hover via `group/row` and `group-hover/row:opacity-100`.
@@ -243,6 +253,7 @@ CLOUDFLARE_API_TOKEN=
 - **Rules ownership**: Rules use `session.user.email` for ownership, same as logs. Never trust a client-provided user id/email for rule mutations.
 - **Indicator ownership**: Indicators use `session.user.email` for ownership, same as logs and rules. Never trust a client-provided user id/email for indicator mutations.
 - **Indicator icons**: Indicator icon names must come from `src/lib/indicator-icons.ts`. Use `IndicatorIcon` instead of importing arbitrary Lucide icons in every indicator UI.
+- **Portaled pickers**: Use `PickerDropdown` for compact custom dropdown menus inside dialogs. Its menu is portaled to `document.body`, so outside-click logic must account for both the trigger and the portaled menu.
 - **NextAuth session has no `id`**: Default JWT strategy with Google provider only includes `name`, `email`, and `image`. Use `session.user.email` as the user identifier.
 - **MongoDB default database**: URI without a database name routes to `test`. Always include `/<db-name>` before the query string.
 - **Cloudflare direct upload**: `POST /images/v2/direct_upload` must use `multipart/form-data`, not JSON. The upload URL format is `https://upload.imagedelivery.net/<accountHash>/<imageId>`; parse index `[3]` for account hash to build delivery URLs.
