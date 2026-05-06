@@ -11,6 +11,9 @@ Trading journal built with Next.js 16, App Router, TypeScript, Tailwind CSS v4, 
 - Trading rules stored per user and displayed above the trade log.
 - Rules dialog for adding and deleting trading rules.
 - Trade indicators stored per user, with an indicators dialog for adding and deleting checkbox indicators.
+- Indicators support user-selected Lucide icons from a curated 40-icon set.
+- New log entries use user-created indicators instead of hardcoded direction, option, outcome, or entry-rules fields.
+- Trade log indicator columns are generated from the user's indicators and show saved per-trade answers.
 - Permanently dark UI.
 
 ## Key Files
@@ -23,13 +26,15 @@ Trading journal built with Next.js 16, App Router, TypeScript, Tailwind CSS v4, 
 - `src/components/trading-rules-dialog.tsx` fetches rules for the rules dialog.
 - `src/components/trading-rules-dialog-client.tsx` handles interactive add/delete rule behavior.
 - `src/components/trade-indicators-dialog.tsx` fetches indicators for the indicators dialog.
-- `src/components/trade-indicators-dialog-client.tsx` handles interactive add/delete indicator behavior.
+- `src/components/trade-indicators-dialog-client.tsx` handles interactive add/delete indicator behavior and icon selection.
+- `src/components/indicator-icon.tsx` renders the selected Lucide icon for an indicator.
 - `src/app/api/log-actions.ts` contains trade log server actions.
 - `src/app/api/rule-actions.ts` contains trading rule server actions.
 - `src/app/api/indicator-actions.ts` contains trade indicator server actions.
 - `src/app/api/models/log.ts` defines the log schema.
 - `src/app/api/models/rule.ts` defines the rule schema.
 - `src/app/api/models/indicator.ts` defines the indicator schema.
+- `src/lib/indicator-icons.ts` defines the allowed indicator icon names and labels.
 
 ## Local Dev
 

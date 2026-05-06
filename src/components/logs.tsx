@@ -60,9 +60,8 @@ export default async function Logs() {
                     <th className="px-4 py-4 font-medium">Contracts</th>
                     <th className="px-4 py-4 font-medium">P&L</th>
                     {indicatorColumns.map((indicator) => (
-                      <th key={indicator.id} className="min-w-40 px-4 py-4 font-medium">
-                        <span className="flex items-center gap-1.5">
-                          <IndicatorIcon name={indicator.icon} className="size-3.5" />
+                      <th key={indicator.id} className="min-w-20 max-w-32 px-4 py-4 font-medium">
+                        <span className="flex items-start gap-1.5">
                           {indicator.label}
                         </span>
                       </th>
@@ -117,7 +116,7 @@ export default async function Logs() {
                         )?.value;
 
                         return (
-                          <td key={indicator.id} className="min-w-40 px-4 py-4">
+                          <td key={indicator.id} className="min-w-20 px-4 py-4">
                             {value == null ? (
                               <span className="text-muted-foreground">-</span>
                             ) : value ? (

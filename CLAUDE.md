@@ -48,11 +48,13 @@ src/
 |   +-- trading-rules-dialog.tsx         # Server wrapper, fetches rules for dialog
 |   +-- trading-rules-dialog-client.tsx  # Client dialog, add/delete trading rules
 |   +-- trade-indicators-dialog.tsx      # Server wrapper, fetches indicators for dialog
-|   +-- trade-indicators-dialog-client.tsx # Client dialog, add/delete trade indicators
+|   +-- trade-indicators-dialog-client.tsx # Client dialog, add/delete trade indicators and choose icons
+|   +-- indicator-icon.tsx               # Shared Lucide indicator icon renderer
 |   +-- image-lightbox.tsx               # Client thumbnail grid and dialog image viewer
 |   +-- page-loader.tsx                  # Reusable centered spinner
 |   +-- ui/                              # shadcn/ui primitives
 +-- lib/
+    +-- indicator-icons.ts               # Allowed 40-icon Lucide set for indicators
     +-- utils.ts                         # cn() helper, clsx + tailwind-merge
 ```
 
@@ -84,15 +86,10 @@ await connectDB();
 | Field                 | Type                       | Notes                                      |
 |-----------------------|----------------------------|--------------------------------------------|
 | `userEmail`           | `String` indexed           | Identifies the owner                       |
-| `direction15m`        | `"Bullish" \| "Bearish"` | Required, enum-validated                   |
-| `direction1hr`        | `"Bullish" \| "Bearish"` | Required, enum-validated                   |
-| `option`              | `"CALL" \| "PUT"`        | Required, enum-validated                   |
-| `outcome`             | `"WIN" \| "LOSS"`        | Required, enum-validated                   |
-| `confirmedConditions` | `Boolean`                  | Default false                              |
 | `entryPrice`          | `Number`                   | Optional                                   |
 | `exitPrice`           | `Number`                   | Optional                                   |
 | `contracts`           | `Number`                   | Optional                                   |
-| `indicators`          | `Object[]`                 | Snapshot of checkbox indicator answers    |
+| `indicators`          | `Object[]`                 | Snapshot of checkbox indicator answers, labels, and icons |
 | `imageUrls`           | `String[]`                 | Cloudflare delivery URLs, default `[]`     |
 | `createdAt`           | `Date`                     | Auto via `timestamps: true`                |
 | `updatedAt`           | `Date`                     | Auto via `timestamps: true`                |
@@ -104,7 +101,7 @@ The model currently uses `delete models["Log"]; model(...)` to prevent stale sch
 `src/app/api/log-actions.ts`
 
 - `getLogs()` returns logs for the current user sorted newest-first, using `.lean()` for plain serializable objects.
-- `createLogEntry(prev, formData)` validates fields, accepts `imageUrls`, verifies submitted indicator IDs against the current user's indicators, snapshots indicator labels/values, writes to DB, and calls `revalidatePath("/dashboard")`.
+- `createLogEntry(prev, formData)` accepts prices, contracts, `imageUrls`, and submitted indicator IDs, verifies indicators against the current user, snapshots indicator labels/icons/values, writes to DB, and calls `revalidatePath("/dashboard")`.
 - `deleteLog(id)` deletes only the current user's log, deletes associated Cloudflare images, and revalidates the dashboard.
 
 ## Rule Model
@@ -128,11 +125,12 @@ Trading rules are associated with `session.user.email`, matching trade logs.
 |-------------|--------------|--------------------------------------------|
 | `userEmail` | `String` indexed | Identifies the owner                   |
 | `label`     | `String`     | Required, trimmed, max 100                 |
+| `icon`      | `String`     | Required, one of the curated Lucide icon names |
 | `type`      | `"checkbox"` | Required, default checkbox for first pass  |
 | `createdAt` | `Date`       | Auto via `timestamps: true`                |
 | `updatedAt` | `Date`       | Auto via `timestamps: true`                |
 
-Trade indicators are associated with `session.user.email`, matching trade logs and trading rules. The model includes `type` so future indicator kinds can be added without replacing the collection.
+Trade indicators are associated with `session.user.email`, matching trade logs and trading rules. The model includes `type` so future indicator kinds can be added without replacing the collection. Icons are restricted to the allowlist in `src/lib/indicator-icons.ts`.
 
 ## Rule Actions
 
@@ -147,7 +145,7 @@ Trade indicators are associated with `session.user.email`, matching trade logs a
 `src/app/api/indicator-actions.ts`
 
 - `getIndicators()` returns indicators for the current user sorted oldest-first, using `.lean()` for serializable objects.
-- `createIndicator(prev, formData)` validates indicator label text, writes a checkbox indicator to DB, and calls `revalidatePath("/dashboard")`.
+- `createIndicator(prev, formData)` validates indicator label text and icon name, writes a checkbox indicator to DB, and calls `revalidatePath("/dashboard")`.
 - `deleteIndicator(id)` deletes only indicators owned by the current user, then revalidates the dashboard.
 
 ## Components
@@ -158,11 +156,11 @@ Trade indicators are associated with `session.user.email`, matching trade logs a
 
 ### LogEntryFormClient
 
-`src/components/log-entry-form-client.tsx` - client component. Opens a dialog and submits via `useActionState(createLogEntry)`. Renders current checkbox indicators in the new log entry dialog. Image upload flow: on submit, requests signed direct-upload URLs from `POST /api/upload`, uploads files directly to Cloudflare from the browser, then injects resulting `imageUrls` into `FormData` before calling `formAction` inside `startTransition`.
+`src/components/log-entry-form-client.tsx` - client component. Opens a dialog and submits via `useActionState(createLogEntry)`. Renders current checkbox indicators in the new log entry dialog. The old hardcoded direction, option, outcome, and entry-rules fields have been removed in favor of user-created indicators. Image upload flow: on submit, requests signed direct-upload URLs from `POST /api/upload`, uploads files directly to Cloudflare from the browser, then injects resulting `imageUrls` into `FormData` before calling `formAction` inside `startTransition`.
 
 ### Logs
 
-`src/components/logs.tsx` - async server component. Fetches logs directly, no client-side call. Wrapped in `Suspense` on the dashboard page. Includes `ImageLightbox` per row for screenshot thumbnails.
+`src/components/logs.tsx` - async server component. Fetches logs and indicators directly, no client-side call. Wrapped in `Suspense` on the dashboard page. Renders one table column per user indicator and displays each saved per-trade indicator answer. Includes `ImageLightbox` per row for screenshot thumbnails.
 
 ### TradingRules
 
@@ -182,7 +180,11 @@ Trade indicators are associated with `session.user.email`, matching trade logs a
 
 ### TradeIndicatorsDialogClient
 
-`src/components/trade-indicators-dialog-client.tsx` - client component. Opens a dialog, lists current checkbox indicators with delete buttons, and adds a new checkbox indicator via `useActionState(createIndicator)`. Uses `router.refresh()` after add/delete.
+`src/components/trade-indicators-dialog-client.tsx` - client component. Opens a dialog, lists current checkbox indicators with delete buttons, and adds a new checkbox indicator via `useActionState(createIndicator)`. Includes a curated 40-icon picker and stores the selected icon with the indicator. Uses `router.refresh()` after add/delete.
+
+### IndicatorIcon
+
+`src/components/indicator-icon.tsx` - shared Lucide icon renderer for indicator dialog rows, new log checkbox labels, and log table headers.
 
 ### DeleteLogButton
 
@@ -240,6 +242,7 @@ CLOUDFLARE_API_TOKEN=
 - **Server/client component split**: Components that fetch DB-backed data stay as server components. If they need client hooks or event handlers, use a server wrapper plus a separate `*-client.tsx` component, as with `trading-rules-dialog.tsx`.
 - **Rules ownership**: Rules use `session.user.email` for ownership, same as logs. Never trust a client-provided user id/email for rule mutations.
 - **Indicator ownership**: Indicators use `session.user.email` for ownership, same as logs and rules. Never trust a client-provided user id/email for indicator mutations.
+- **Indicator icons**: Indicator icon names must come from `src/lib/indicator-icons.ts`. Use `IndicatorIcon` instead of importing arbitrary Lucide icons in every indicator UI.
 - **NextAuth session has no `id`**: Default JWT strategy with Google provider only includes `name`, `email`, and `image`. Use `session.user.email` as the user identifier.
 - **MongoDB default database**: URI without a database name routes to `test`. Always include `/<db-name>` before the query string.
 - **Cloudflare direct upload**: `POST /images/v2/direct_upload` must use `multipart/form-data`, not JSON. The upload URL format is `https://upload.imagedelivery.net/<accountHash>/<imageId>`; parse index `[3]` for account hash to build delivery URLs.
